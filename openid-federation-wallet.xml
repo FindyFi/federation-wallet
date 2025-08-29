@@ -1,0 +1,735 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- name="GENERATOR" content="github.com/mmarkdown/mmark Mmark Markdown Processor - mmark.miek.nl" -->
+<rfc version="3" ipr="none" docName="openid-federation-wallet" submissionType="IETF" category="std" xml:lang="en" xmlns:xi="http://www.w3.org/2001/XInclude" indexInclude="true" consensus="true">
+
+<front>
+<title abbrev="openid-federation-wallet">OpenID Federation Wallet Architectures 1.0 - draft 04</title><seriesInfo value="openid-federation-wallet" status="standard" name="Internet-Draft"></seriesInfo>
+<author initials="G." surname="De Marco" fullname="Giuseppe De Marco"><organization>Dipartimento per la trasformazione digitale</organization><address><postal><street></street>
+</postal><email>gi.demarco@innovazione.gov.it</email>
+</address></author><author initials="R." surname="Hedberg" fullname="Roland Hedberg"><organization>Catalogix</organization><address><postal><street></street>
+</postal><email>roland@catalogix.se</email>
+</address></author><author initials="M.B." surname="Jones" fullname="Michael B. Jones"><organization>Self-Issued Consulting</organization><address><postal><street></street>
+</postal><email>michael_b_jones@hotmail.com</email>
+</address></author><author initials="J." surname="Bradley" fullname="John Bradley"><organization>Yubico</organization><address><postal><street></street>
+</postal><email>ve7jtb@ve7jtb.com</email>
+</address></author><date/>
+<area>Internet</area>
+<workgroup>OpenID Connect A/B</workgroup>
+<keyword>security</keyword>
+<keyword>openid</keyword>
+<keyword>ssi</keyword>
+
+<abstract>
+<t>This specification defines the OpenID Federation entity types for
+digital wallet architectures.</t>
+</abstract>
+
+</front>
+
+<middle>
+
+<section anchor="introduction"><name>Introduction</name>
+<t>As digital wallets become increasingly deployed for managing identity credentials,
+establishing an architecture for trusted communication is required to allow each
+participant in the ecosystem to evaluate other participants' compliance with mutual trust frameworks
+and accomplish secure and trusted transactions.</t>
+<t>This specification defines how to use OpenID Federation 1.0 <xref target="OpenID.Federation"></xref> to enhance the
+security and interoperability of wallet ecosystems, facilitating trust establishment
+among the parties and enabling secure metadata exchange and policy
+application across large scale deployments.
+It outlines the general architecture of a federated trust
+infrastructure for wallet ecosystems, identifying participant roles and describing
+the use of those roles.</t>
+<t>Additionally, this specification provides practical examples of how to apply
+policies for typical use cases within wallet ecosystems.
+Finally, it offers guidance on defining trust marks for use within
+wallet ecosystems.</t>
+
+<section anchor="requirements-notation-and-conventions"><name>Requirements Notation and Conventions</name>
+<t>The key words &quot;MUST&quot;, &quot;MUST NOT&quot;, &quot;REQUIRED&quot;, &quot;SHALL&quot;, &quot;SHALL NOT&quot;, &quot;SHOULD&quot;,
+&quot;SHOULD NOT&quot;, &quot;RECOMMENDED&quot;, &quot;NOT RECOMMENDED&quot;, &quot;MAY&quot;, and &quot;OPTIONAL&quot; in
+this document are to be interpreted as described in BCP 14 <xref target="RFC2119"></xref>
+<xref target="RFC8174"></xref> when, and only when, they appear in all capitals, as shown here.</t>
+</section>
+</section>
+
+<section anchor="scope"><name>Scope</name>
+<t>This specification is a profile of <xref target="OpenID.Federation"></xref> for wallet ecosystems.
+It defines entity types for entities participating in those ecosystems.
+It describes trust evaluation mechanisms for those entities.
+It uses applicable metadata parameters defined by other specifications
+for wallet entities.</t>
+<t>Collaboration Note: When a metadata parameter is needed for an Entity Type
+defined by this specification that does not currently exist and
+that would be usable by wallet ecosystems both using and not using OpenID Federation,
+it is the editors' intent to work with the working groups creating
+general-purpose wallet specifications to define those new parameters there.</t>
+</section>
+
+<section anchor="terminology"><name>Terminology</name>
+<t>This specification uses the terms
+&quot;End-User&quot; and &quot;Entity&quot; as defined by OpenID Connect Core <xref target="OpenID.Core"></xref>,
+&quot;JSON Web Token (JWT)&quot; defined by JSON Web Token (JWT) <xref target="RFC7519"></xref>,
+&quot;CBOR Web Token (CWT)&quot; defined by CBOR Web Token (CWT) <xref target="RFC8392"></xref>,
+&quot;Client&quot; as defined by <xref target="RFC6749"></xref>,
+&quot;Verifiable Presentation&quot; and &quot;Wallet Attestation&quot; defined in <xref target="OpenID4VP"></xref>,
+&quot;Holder&quot; and &quot;Credential Issuer&quot; defined in <xref target="OpenID4VCI"></xref>,
+and &quot;Trust Mark&quot;, &quot;Federation Entity&quot;, &quot;Trust Anchor&quot;,
+&quot;Intermediate&quot;, and &quot;Subordinate Statement&quot; defined in <xref target="OpenID.Federation"></xref>.</t>
+<t>This specification also defines the following terms:</t>
+
+<dl spacing="compact">
+<dt><strong>Organizational Entity</strong>:</dt>
+<dd>A Federation Entity represented by a legal entity, specifically referring to public or private organizations (excluding natural persons) recognized through a unique identifier. For the purposes of this specification, an Organizational Entity is also referred to as an Organization.</dd>
+<dt><strong>Personal Device</strong>:</dt>
+<dd>Any electronic device that is primarily used by an individual. This includes smartphones, tablets, laptops, personal computers, smart watches, and other wearable technologies. Personal Devices are owned and managed by End-Users as individuals, rather than by Organizations, or by End-Users on behalf of an Organization.</dd>
+<dt><strong>Wallet Provider</strong>:</dt>
+<dd>An Organizational Entity responsible for the development, publication, and management of a Wallet Solution.</dd>
+<dt><strong>Wallet Instance</strong>:</dt>
+<dd>Instance of a Wallet Solution belonging to and controlled by a person, be this natural or legal. It enables the request, storage, presentation, and management of Digital Credentials. It can be installed (instantiated) in a Personal Device or in a Remote Service.</dd>
+<dt><strong>Wallet Solution</strong>:</dt>
+<dd>The Wallet Solution is a product offered by a Wallet Provider to enable End-Users to securely manage and use their Digital Credentials. It is delivered by the Wallet Provider in the form of mobile app or cloud service or another form of software application. It may also utilize services and web services for the exchange of data between its Wallet Provider and the Wallet Instances.</dd>
+<dt><strong>Authentic Source</strong>:</dt>
+<dd>A protected Resource Server, not necessarily an OAuth 2.0 Resource Server, utilized by the Credential Issuer to retrieve the data necessary for issuing a Credential related to a subject.</dd>
+<dt><strong>Credential Verifier</strong>:</dt>
+<dd>Entity that requests and verifies Digital Credentials presented by a Holder.</dd>
+<dt><strong>Credential Verifier Instance</strong>:</dt>
+<dd>A software application that allows an individual to request to an Holder and receive from that Holder a Digital Credential, sometimes in a proximity flow, and then verify the received Digital Credential.</dd>
+</dl>
+
+<section anchor="trust-models-and-trust-frameworks"><name>Trust Models and Trust Frameworks</name>
+<t>The terms &quot;trust model&quot; and &quot;trust framework&quot; are often used in the context of security, identity management, and federation systems.</t>
+<t>The Trust Model defines the relationships and mechanisms through which trust is established and maintained between entities in a system. It outlines how entities interact, the basis on which they can trust each other, and the roles they play within the system. Trust Models can be simple or complex, depending on the number of parties involved and the nature of their interactions. Common examples include:</t>
+
+<ul spacing="compact">
+<li><strong>Direct Trust</strong>: Trust is established directly between two parties without intermediaries.</li>
+<li><strong>Trusted Third Party</strong>: Trust is facilitated by a trusted third party.</li>
+<li><strong>Web of Trust</strong>: Each participant makes individual decisions about whom to trust, using Direct Trust or potentially multiple Third-Parties.</li>
+</ul>
+<t><strong>Trusted Third-Party</strong> is the focus of this specification, although the <strong>Web of Trust</strong> model is not excluded if multiple trusted third parties (Trust Anchors) are supported by the participants.</t>
+<t>A Trust Framework is a comprehensive structure that includes policies, standards, and guidelines that govern the implementation of a Trust Model. It provides detailed rules for how trust should be managed, including the legal, technical, and procedural aspects. To allow for a scalable approach, as many aspects of the framework as possible should be presented in a machine discoverable and machine-readable way.</t>
+<t>In the scope of this specification, only the technical and procedural aspects are considered and fully covered.</t>
+<t>OpenID Federation <xref target="OpenID.Federation"></xref> is a building block for assembling and using trust frameworks. It can help ensure that all participants in a system understand and adhere to the same principles and practices, making interactions predictable and secure.</t>
+</section>
+</section>
+
+<section anchor="the-four-party-model"><name>The Four-Party Model</name>
+<t>The Four-Party Model is a framework involving four key participants:
+the Holder, the Credential Issuer, the Credential Verifier,
+and an Entity trusted by the other Entities called the Trust Anchor.
+This is an extension of the three-party Issuer-Holder-Verifier Model described in
+<xref target="OpenID4VCI"></xref> and <xref target="OpenID4VP"></xref> that adds a fourth party: the Trust Anchor.</t>
+<t>The four Entities interact with each other as described below:</t>
+
+<ol spacing="compact">
+<li><strong>Holder</strong>: The Holder requests, stores, presents, and manages Digital Credentials and other forms of digital attestations. It discovers trustworthy Credential Issuers through the Trust Anchor and its Intermediates. Additionally, the Holder evaluates trust with Credential Verifiers recognized by the Trust Anchor and its Intermediates and checks for the non-revocation of the other Entities in use.</li>
+<li><strong>Credential Issuer</strong>: This Entity issues Digital Credentials to the Holder, after having evaluated the trust in the Wallet Solution and the security of the Holder.</li>
+<li><strong>Credential Verifier</strong>: This is any Entity that requires proof of the End-User's identity, through the presentation of Credentials, to provide services or carry out transactions. Credential Verifiers rely on the validity of the Digital Credentials presented via the End-User's Wallet. They MUST have the means to verify these Credentials against the Credential Issuer's cryptographic public keys or other verification methods to ensure they are authentic and have not been tampered with. The Credential Verifier uses the Trust Anchor and its Intermediates to establish the trust with the Credential Issuers, obtains their metadata and cryptographic material, and check the validity of the presented Digital Credentials. It also establishes trust with the Holder and the Wallet Solution used by it.</li>
+<li><strong>Trust Anchor</strong>: This Entity and its Intermediates, issue Subordinate Statements and any required information about the status of the Federation and its participants (Organizational Entities), to demonstrate their non-revocations, distribute the policies and prevents the repudiation of the past transaction about any trust evaluation, if signed. Historical proofs allow for the evaluation of an Organizational Entity's status within a federation and their past signatures, which can be verified using a historical Trust Chain.</li>
+</ol>
+
+<sourcecode type="ascii-art">+-------------------+    +---------------+    +---------------------+
+| Credential Issuer |&lt;--&gt;|    Holder     |&lt;--&gt;| Credential Verifier |
+|                   |    |               |    |                     |
++-------------------+    +---------------+    +---------------------+
+         |                       |                     |
+         |                       |                     |
+         V                       V                     V
++--------------------------------------------------------------+
+|                          Trust Anchor                        |
++--------------------------------------------------------------+
+</sourcecode>
+<t><strong>Figure 1</strong>: The relationships and interactions within a Wallet ecosystem using the Four-Party Model, where each entity uses the Trust Anchor to establish the trust with other entities.</t>
+<t>In the Wallet Ecosystem, the primary interaction resolves around asset management. Unlike an Identity Provider in OpenID Connect or SAML2, which authenticates the End-User's identity for third parties, the Credential Issuer in the Wallet ecosystem focuses on managing the issuance of Digital Credentials to the Holder.</t>
+<t>The transactions primarily involve the transfer or management of Digital Credentials rather than granting access to services based on identity verification.</t>
+<t>Consequently, the End-User obtains and holds the Digital Credentials without disclosing their intended use to the Credential Issuers. At any subsequent time, the End-User can present these Digital Credentials to a Credential Verifier to authenticate themselves.</t>
+
+<sourcecode type="ascii-art">+------------------+     +-----------------+
+| Authentic Source |     | Wallet Provider |
+|                  |     |                 |
++------------------+     +-----------------+
+         |                       |
+         |                       |
+         V                       V
++-------------------+    +---------------+    +---------------------+
+| Credential Issuer |&lt;--&gt;|    Holder     |&lt;--&gt;| Credential Verifier |
+|                   |    |               |    |                     |
++-------------------+    +---------------+    +---------------------+
+         |                       |                     |
+         |                       |                     |
+         V                       V                     V
++-------------------------------------------------------------------+
+|                          Trust Anchor                             |
++-------------------------------------------------------------------+
+</sourcecode>
+<t><strong>Figure 2</strong>: Representation acknowledging the roles of Authentic Sources and Wallet Providers in the ecosystem while maintaining the core structure of the Four-Party Model.</t>
+<t>The Figure above illustrates at the center the Holder, who interacts directly with both the Credential Issuer and the Credential Verifier. The Credential Issuer provides Digital Credentials to the Holder, while the Credential Verifier relies on these Credentials to verify the Holder's claims. Above the Holder is the Wallet Provider, which facilitates the registration and the attestation of the security and integrity of the Holder. All entities, including the Credential Issuer, Credential Verifier, Wallet Provider and therefore Holders, and are underpinned by a Trust Anchor, ensuring that all interactions and transactions are anchored in a trusted third party.</t>
+</section>
+
+<section anchor="wallet-instance-types"><name>Wallet Instance Types</name>
+<t>There are many ways to technically implement Wallet Instances to manage Digital Credentials. There are typically two types of Wallet End-Users: one is a natural person and another is an Organizational Entity. These two types of End-Users may have different usage and functional requirements.</t>
+<t>Below a non-exhaustive list of the different Wallet Instance types.</t>
+
+<dl spacing="compact">
+<dt><strong>Mobile Wallet Native Application</strong></dt>
+<dd>Also known as Mobile Wallet only, is an application that runs natively on a Personal Device under the sole control of an End-User and provided through a platform vendor specific app-store, on behalf of the Wallet Solution. In some cases the End-User as natural person uses the Mobile Wallet representing a legal person.</dd>
+<dt><strong>Web Wallet Native Application</strong></dt>
+<dd><t>Also known as Cloud Wallet or Web Wallet only, is a Wallet that uses native web technologies for its components, such as UI components. Cloud Wallets are typically suited for Organizational Entities that requires automated Digital Credential operations (request, issuance, store, presentation, revocations) in unsupervised flows, therefore without any human control. Web Wallets are divided into two additional subtypes:</t>
+
+<ul spacing="compact">
+<li><strong>Custodial Web Wallet</strong>: Cloud Wallets that have dependency on a cloud infrastructure, not necessarily hosted by the Wallet Provider, are typically classified as Custodial Web Wallets; in this case, the cryptographic keys used and the Digital Credentials are stored in the cloud infrastructure.</li>
+<li><strong>Non-Custodial Web Wallet</strong>: A Web Wallet where the cryptographic keys are stored and managed on a media in possession by the End-User and the Digital Credentials can only be used by the End-User, e.g. using a FIDO enabled security hardware token, no matter whether the Credentials are stored locally in a Personal Device or in cloud storage.</li>
+</ul></dd>
+<dt><strong>Progressive Web Application Wallet</strong> (PWAW)</dt>
+<dd>PWAW is a web application that looks like a native app. It can be installed on a Personal Device and not necessarily using the operative system specific app-store. The advantage with a PWAW is that it gives the End-User the same experience as a Mobile Native Wallet Application while also offering the benefits of a web application. PWAW can be Custodial or Non-Custodial.</dd>
+</dl>
+
+<section anchor="establishing-trust-with-the-holder"><name>Establishing Trust with the Holder</name>
+<t>Since the Holder may not be an Organizational Entity and cannot be registered as an Organization through registration services, it is not represented within a Trust Chain and does not qualify as a Federation Entity. This context sets the stage for understanding the unique position of the Holder in relation to the Trust Chain and Federation Entities.</t>
+
+<sourcecode type="ascii-art">+----------------------------+
+| Trust Chain                |
+| +------------------------+ |
+| | Trust Anchor           | |
+| | (Entity Configuration) | |
+| +------------------------+ |
+|                     |      |
+|                     v      |
+| +------------------------+ |
+| | Trust Anchor           | |
+| | (Subordinate Statement | |
+| |  about the             | |
+| |  Wallet Provider)      | |
+| +------------------------+ |
+|                     |      |
+|                     v      |
+| +------------------------+ |
+| | Wallet Provider        | |    +-------------------------------+
+| | (Entity Configuration) |-----&gt;|      Wallet Attestation       |
+| +------------------------+ |    | (Not part of the Trust Chain) |
++----------------------------+    +-------------------------------+
+</sourcecode>
+<t><strong>Figure 3</strong>: Federation Trust Chain and Wallet Attestation are separate things, where the Wallet Attestation is linked to its Issuer attested within the Trust Chain.</t>
+<t>Outside the Trust Chain, it is the Wallet Attestation, where the Wallet Provider that issued it is attestable through the Trust Chain, while the Wallet, such as the End-User's Native Mobile Application installed on the Personal Device, is attested through the Wallet Attestation and under the responsibility of its issuer, the Wallet Provider.</t>
+</section>
+</section>
+
+<section anchor="wallet-architecture-entity-types"><name>Wallet Architecture Entity Types</name>
+<t>This section defines the Entity Types used by Organizational Entities in their Entity Configurations according to their roles in the Wallet ecosystem.</t>
+<table>
+<thead>
+<tr>
+<th>Entity</th>
+<th>Entity Type Identifiers</th>
+<th>References</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>Trust Anchor</td>
+<td><tt>federation_entity</tt></td>
+<td><xref target="OpenID.Federation"></xref></td>
+</tr>
+
+<tr>
+<td>Intermediate</td>
+<td><tt>federation_entity</tt></td>
+<td><xref target="OpenID.Federation"></xref></td>
+</tr>
+
+<tr>
+<td>Wallet Provider</td>
+<td><tt>federation_entity</tt>, <tt>openid_wallet_provider</tt></td>
+<td>this specification</td>
+</tr>
+
+<tr>
+<td>Authorization Server</td>
+<td><tt>federation_entity</tt>, <tt>oauth_authorization_server</tt></td>
+<td><xref target="OpenID4VCI"></xref>, <xref target="RFC8414"></xref></td>
+</tr>
+
+<tr>
+<td>Credential Issuer</td>
+<td><tt>federation_entity</tt>, <tt>openid_credential_issuer</tt>, <tt>oauth_authorization_server</tt></td>
+<td><xref target="OpenID4VCI"></xref>, this specification</td>
+</tr>
+
+<tr>
+<td>Credential Verifier</td>
+<td><tt>federation_entity</tt>, <tt>openid_credential_verifier</tt></td>
+<td><xref target="OpenID.Federation"></xref>, <xref target="OpenID4VP"></xref>, this specification</td>
+</tr>
+</tbody>
+</table><t><strong>Table 1</strong>: Map of the Federation Entity Types and corresponding metadata types for the Wallet architectures.</t>
+<t>The Credential Issuer is an OAuth 2.0 Protected Resource Server and it MAY also implement, within the same Entity, an OAuth 2.0 Authorization Server. According to <xref target="OpenID4VCI"></xref>, the Authorization Server can be external to the Entity that implements the Credential Endpoint, therefore the use of <tt>oauth_authorization_server</tt> is OPTIONAL.</t>
+
+<section anchor="openid-wallet-provider-entity-type"><name>OpenID Wallet Provider Entity Type</name>
+<t>The OpenID Federation Entity Type Identifier for the Wallet Provider is <tt>openid_wallet_provider</tt>.</t>
+<t>For information on metadata parameters specific to OpenID Wallets,
+refer to Section <em>10. Wallet Metadata (Authorization Server Metadata)</em> of
+the OpenID for Verifiable Presentations <xref target="OpenID4VP"></xref> specification.</t>
+</section>
+
+<section anchor="openid-credential-issuer-entity-type"><name>OpenID Credential Issuer Entity Type</name>
+<t>The OpenID Federation Entity Type Identifier for the Credential Issuer is <tt>openid_credential_issuer</tt>.</t>
+<t>For information on metadata parameters specific to OpenID Credential Issuers,
+refer to Section <em>11.2. Credential Issuer Metadata</em> of
+the OpenID for Verifiable Credential Issuance <xref target="OpenID4VCI"></xref> specification.</t>
+</section>
+
+<section anchor="openid-credential-verifier-entity-type"><name>OpenID Credential Verifier Entity Type</name>
+<t>The OpenID Federation Entity Type Identifier for the Credential Verifier is <tt>openid_credential_verifier</tt>.</t>
+<t>This specification introduces a distinct Entity Type Identifier for the OpenID Credential Verifier to clearly differentiate it from a traditional OpenID Connect Relying Party (<tt>openid_relying_party</tt>). This distinction highlights the unique characteristics and functionalities of the Wallet ecosystem and its Credential Verifier.</t>
+<t>For information on metadata parameters specific to OpenID Credential Verifiers,
+refer to Section <em>11. Verifier Metadata (Client Metadata)</em> of
+the OpenID for Verifiable Presentations <xref target="OpenID4VP"></xref> specification.</t>
+</section>
+</section>
+
+<section anchor="federation-policies"><name>Federation Policies</name>
+<t>Policies refer to a set of rules that govern the operations, security, and interactions within a federation.</t>
+<t>Technical implementation of federation policies over participants metadata is managed with the use of <tt>metadata</tt> and <tt>metadata_policy</tt> parameters in Subordinate Statements. These parameters allow for the configuration enforcement of application-specific metadata changes for each subject (Leaf).</t>
+<t>Qualitative aspects of federation entities, including administrative protocols, security measures, and behavioral profiling, are regulated by Trust Marks. These marks provide verifiable assertions of compliance with specific profiles beyond the scope of the application-specific metadata.</t>
+
+<section anchor="using-metadata"><name>Using Metadata</name>
+<t>Metadata refers to application-specific properties about a subject and for the purpose of the interoperability. This includes details such as service endpoints, cryptographic keys, and other supported configurations.</t>
+<t>Metadata within a Subordinate Statement allows for modifications to the metadata published in a Leaf's Entity Configuration.
+These modifications allow a federation authority, such as a Trust Anchor, to apply policies coercively to its subordinates. This can include actions such as removing weak signature algorithms from their metadata, enforcing the use of specific endpoints configured at the time of the entity's registration within the ecosystem, or restricting the personal data that a Credential Verifier is allowed to request.</t>
+
+<artwork>{
+  &quot;iss&quot;: &quot;https://trust-anchor.example.com&quot;,
+  &quot;sub&quot;: &quot;https://credential-verifier.example.it&quot;,
+  &quot;iat&quot;: 1616239022,
+  &quot;exp&quot;: 1616239322,
+  &quot;metadata&quot;: {
+    &quot;federation_entity&quot;: {
+      &quot;organization_name&quot;: &quot;Example Credential Verifier&quot;,
+    },
+    &quot;openid_credential_verifier&quot;: { ... as defined in the OpenID4VP specs ... }
+  },
+  &quot;jwks&quot;: {
+    &quot;keys&quot;: [
+      {
+        &quot;kty&quot;: &quot;RSA&quot;,
+        &quot;use&quot;: &quot;sig&quot;,
+        &quot;kid&quot;: &quot;1&quot;,
+        &quot;n&quot;: &quot;0vx7agoebGcQSuuPiLJXZptN9nndrQmbXEPCRfceaC7mkxr8v...&quot;,
+        &quot;e&quot;: &quot;AQAB&quot;
+      }
+    ]
+  }
+}
+</artwork>
+<t><strong>Example 1</strong>: Example demonstrating how a Federation Authority can issue a Subordinate Statement about a Credential Verifier, specifying certain metadata parameters such as the endpoints to use and the allowed Digital Credentials to be requested.</t>
+</section>
+
+<section anchor="differences-between-metadata-and-metadata-policy"><name>Differences Between <tt>metadata</tt> and <tt>metadata_policy</tt></name>
+<t>The key difference between <tt>metadata</tt> and <tt>metadata_policy</tt> is that metadata directly affects only the Immediate Subordinate Entity, while <tt>metadata_policy</tt> impacts the configuration of all Subordinate Entities along a Trust Chain, as defined in Sections 3, 5 and 6.1 of <xref target="OpenID.Federation"></xref>.</t>
+</section>
+
+<section anchor="using-metadata-policies"><name>Using Metadata Policies</name>
+<t>Differently from <tt>metadata</tt>, <tt>metadata_policy</tt> ensures that specific settings can be propagated to all the Entities Statements contained within a Trust Chain.</t>
+</section>
+
+<section anchor="using-trust-marks"><name>Using Trust Marks</name>
+<t>Trust Marks are issued by authorized entities (Trust Mark Issuers) within the federation, typically after an entity has demonstrated compliance with certain standards, this might happen through auditing or certification processes.</t>
+<t>Trust Marks are typically implemented as signed assertions that can be verified by other entities.</t>
+<t>This verification process involves checking the digital signature against the public key of the Trust Mark Issuer to ensure the Trust Mark has not been forged, and its check to the Trust Mark Status endpoint to check it against any revocation.</t>
+<t>Trust Marks SHOULD be defined within the trust framework. Trust Marks are asserted about a subject through a registration service or compliance evaluation mechanism and therefore included in subject's Entity Configurations. This allows other entities to quickly assess the compliance status of a subject by examining the Entity Configuration of a subject.</t>
+
+<sourcecode type="json=">{
+  &quot;trust_mark_type&quot;:&quot;https://diligent.federation.example.com/openid_credential_verifier/private/under-age&quot;,
+  &quot;iss&quot;: &quot;https://trustissuer.pinarolo.example.it&quot;,
+  &quot;sub&quot;: &quot;https://vavuso.example.com/rp&quot;,
+  &quot;iat&quot;: 1579621160,
+  &quot;policy_uri&quot;: &quot;https://vavuso.example.com/policy&quot;,
+  &quot;tos_uri&quot;: &quot;https://vavuso.example.com/tos&quot;
+}
+</sourcecode>
+<t><strong>Example 2</strong>: Trust Mark to be included in a Leaf Entity Configuration, which payload states Leaf's compliance in interacting with under-age End-User.</t>
+</section>
+</section>
+
+<section anchor="federation-trust-discovery-use-cases"><name>Federation Trust Discovery Use Cases</name>
+<t>The process of trust establishment in federated environments is illustrated in this section through specific use cases involving Wallet Instances, Credential Issuers (CIs), and Credential Verifiers (CVs).</t>
+
+<section anchor="establishing-trust-with-a-credential-verifier-instance"><name>Establishing Trust with a Credential Verifier Instance</name>
+<t>A Credential Verifier Instance is typically installed on a mobile device, personal computer, or embedded system. It enables an individual to perform Digital Credential verification tasks locally, often in proximity to the Holder, and without necessarily requiring a broadband connection. This instance engages in peer-to-peer exchanges with Holders, facilitating Credential verifications directly on the device. This approach represents a shift from traditional server-based verification to a more user-centric model within the Wallet ecosystem.</t>
+<t>To establish trust between a Holder's Wallet Instance and a Credential Verifier Instance, a mechanism using a verifiable attestation, such as the Wallet Instance Attestations, SHOULD be employed. This process ensures that the Credential Verifier Instance is legitimate and trustworthy.</t>
+<t>The mechanisms used to present the Wallet Instance Attestation to a Credential Verifier are out of scope for this specification, as they are related to Credential presentation flows. For implementation details on these presentation mechanisms, please refer to the OpenID for Verifiable Presentations (OpenID4VP) specification.</t>
+</section>
+
+<section anchor="wallet-checking-the-non-revocation-of-its-wallet-provider"><name>Wallet Checking the Non-Revocation of its Wallet Provider</name>
+<t>Wallets SHOULD periodically check their Wallet Providers' compliance through the federation's trust infrastructure. This involves retrieving the Wallet Provider's Entity Configuration and verifying its Trust Chain up to a recognized Trust Anchor, ensuring that the Wallet Provider has not been revoked within the federation. Wallets SHOULD remain neutral in attesting to the reliability of their Wallet Providers for the End-User, thereby protecting the End-User against any malevolent behavior by the Wallet Provider.</t>
+<t>The Wallet Provider’s Entity Configuration provides essential information, including its roles within the federation, policies it adheres to, and cryptographic keys for secure communication. The Wallet Instance SHOULD use the Federation API to periodically reestablish trust with its Wallet Provider.</t>
+<t>The process to discover the trust with a Wallet Provider is equivalent to the one used for discovering the trust with a Credential Issuer, as described in the dedicated section below.</t>
+</section>
+
+<section anchor="wallet-discovering-credentials-issuers"><name>Wallet Discovering Credentials Issuers</name>
+<t>Wallets begin by discovering the identity of Credential Issuers through the federation's trust infrastructure. This involves retrieving the Credential Issuer's Entity Configuration and verifying its Trust Chain up to a recognized Trust Anchor. The Credential Issuer’s Entity Configuration provides essential information, including its roles within the federation, policies it adheres to, and cryptographic keys for secure communication.</t>
+<t>In the process represented in the sequence diagram below, the Wallet Instance uses the Federation API to discover and collect all the Credential Issuers enabled within the federation.</t>
+
+<sourcecode type="ascii-art">
+        +------+                        +------------+ +------------+ +-----------------+
+        |Wallet|                        |Trust Anchor| |Intermediate| |Credential Issuer|
+        +---+--+                        +------+-----+ +------+-----+ +--------+--------+
+            |  Fetch the list of all           |              |                |
+            |  Intermediates and CIs           |              |                |
+            |---------------------------------&gt;|              |                |
+            |                                  |              |                |
++-----------+----------------------------------+--------------+------+         |
+| LOOP  |for each Intermediate                 |              |      |         |
+|-------+   |                                  |              |      |         |
+|           | Fetch listing of                 |              |      |         |
+|           | Subordinates/CIs                 |              |      |         |
+|           |------------------------------------------------&gt;|      |         |
++-----------+----------------------------------+--------------+------+         |
+            |                                  |              |                |
++-----------+----------------------------------+--------------+----------------+--------+
+| LOOP  |for each CI                           |              |                |        |
+|-------+   |                                  |              |                |        |
+|           | Fetch CI's Entity Configuration  |              |                |        |
+|           |-----------------------------------------------------------------&gt;|        |
+|           |                                  |              |                |        |
+|           | Fetch Subordinate Statement(s)   |              |                |        |
+|           | for CI                           |              |                |        |
+|           |------------------------------------------------&gt;|                |        |
+|           |                                  |              |                |        |
+|           | Fetch Subordinate Statement      |              |                |        |
+|           | for Intermediate(s)              |              |                |        |
+|           |---------------------------------&gt;|              |                |        |
+|           |----+                             |              |                |        |
+|           |    | Validate Trust Chain        |              |                |        |
+|           |    | for CI                      |              |                |        |
+|           |&lt;---+                             |              |                |        |
+|           |                                  |              |                |        |
+|           |----+                             |              |                |        |
+|           |    | Include CI in               |              |                |        |
+|           |    | Discovery Page              |              |                |        |
+|           |    | with validated              |              |                |        |
+|           |    | information and logo        |              |                |        |
+|           |&lt;---+                             |              |                |        |
++-----------+----------------------------------+--------------+----------------+--------+
+        +---+--+                        +------+-----+ +------+-----+ +--------+--------+
+        |Wallet|                        |Trust Anchor| |Intermediate| |Credential Issuer|
+        +------+                        +------------+ +------------+ +-----------------+
+</sourcecode>
+<t><strong>Figure 4</strong>: Federation Credential Issuer listing, the Wallet Instance browse the entire federation collecting all the Credential Issuers.</t>
+<t>The diagram above shows how a Wallet navigates the federation, collecting and validating the Trust Chain for each Credential Issuer (CI), and creating a discovery page including each Credential Issuer using the information, such as the Credential Types and logo obtained through their Trust Chain.</t>
+<t>The diagram below illustrates how a Wallet establishes trust with a Credential Issuer by verifying its link (even if indirect) to a Trust Anchor and validating which Credentials it is authorized to issue. This may happen in a credential offer flow, for instance, where the Wallet is used by an End-User starting from the Credential Issuer website and without any discovery phases started before within the Wallet.</t>
+
+<sourcecode type="ascii-art">        +------+                                 +-----------------+ +-------------------------+          
+        |Wallet|                                 |Credential Issuer| |Intermediate/Trust Anchor|          
+        +---+--+                                 +--------+--------+ +------------+------------+          
+            |    Fetch CI's Entity Configuration          |                       |                       
+            |--------------------------------------------&gt;|                       |                       
+            |                                             |                       |                       
+            |----+                                        |                       |                       
+            |    | Extract Authority Hints                |                       |
+            |    | from CI's Configuration                |                       |                       
+            |&lt;---+                                        |                       |                       
+            |                                             |                       |                       
+            |                                             |                       |                       
++-------+---+---------------------------------------------+-----------------------+------------+
+| LOOP  |for each Authority Hint                          |                       |            |
++-------+   |                                             |                       |            |
+|           |                     Fetch Entity Configuration                      |            |
+|           |--------------------------------------------------------------------&gt;|            |
+|           |                                             |                       |            |
+|           |                    Fetch Subordinate Statement                      |            |
+|           |--------------------------------------------------------------------&gt;|            |
+|           |                                             |                       |            |
+|           |----+                                        |                       |            |
+|           |    | Validate the previous statement        |                       |            |
+|           |&lt;---+ using the Federation Entity Keys       |                       |            |
+|           |      provided in the Subordinate Statement  |                       |            |
+|           |                                             |                       |            |
++-----------+---------------------------------------------+-----------------------+------------+
+            |                                             |                       |                       
+            |----+                                        |                       |                       
+            |    | Validate Trust Chain                   |                       |                       
+            |&lt;---+                                        |                       |                       
+            |                                             |                       |                       
+            |                                             |                       |                       
++------+----+----------------------------------------+    |                       |                       
+| ALT  |If Trust Chain is Valid and Unexpired        |    |                       |                       
++------+    |                                        |    |                       |                       
+|           |----+                                   |    |                       |                       
+|           |    | Proceed with Federation Process   |    |                       |                       
+|           |&lt;---+                                   |    |                       |                       
++-----------+----------------------------------------+    |                       |                       
+|           |                                        |    |                       |                       
+|           |----+                                   |    |                       |                       
+|           |    | Abort Process with Error          |    |                       |                       
+|           |&lt;---+                                   |    |                       |                       
++-----------+----------------------------------------+    |                       |                       
+            |                                             |                       |                       
+            |----+                                        |                       |                       
+            |    | Applies Policies                       |                       |                       
+            |&lt;---+                                        |                       |                       
+            |                                             |                       |                       
+            |----+                                        |                       |                       
+            |    | Derive CI's final metadata             |                       |                       
+            |&lt;---+                                        |                       |                       
+            |                                             |                       |                       
+            |----+                                        |                       |                       
+            |    | Get available Credentials              |                       |
+            |    | allowed for issuance                   |                       |                       
+            |&lt;---+                                        |                       |                       
+        +---+--+                                 +--------+--------+ +------------+------------+          
+        |Wallet|                                 |Credential Issuer| |Intermediate/Trust Anchor|          
+        +------+                                 +-----------------+ +-------------------------+     
+</sourcecode>
+<t><strong>Figure 5</strong>: Federation Entity Discovery, the Wallet Instance evaluates the trust with a Credential Issuer.</t>
+</section>
+
+<section anchor="credential-issuers-establishing-trust-in-the-wallet-provider"><name>Credential Issuers Establishing Trust in the Wallet Provider</name>
+<t>The evaluation of trust by the Credential Issuer towards the Wallet Provider is conducted exactly as other federation entities. This process can be achieved through Federation Entity Discovery, where the Trust Chain is constructed starting from the Entity Configuration of the Wallet Provider. The Credential Issuer retrieves the Entity Configuration of the Wallet Provider and follows the <tt>authority_hints</tt> to build the Trust Chain in the usual manner.</t>
+<t>Alternatively, trust can be established via a signed data object issued by Wallet Provider, which includes the <tt>trust_chain</tt> parameter, as defined in Section 4.3 of <xref target="OpenID.Federation"></xref>. This parameter contains a pre-constructed and verifiable Trust Chain, which MUST be validated using one of the the public keys of the Trust Anchor. This method allows for a streamlined trust evaluation process, as the Trust Chain is provided directly by the Wallet Provider and can be quickly validated.</t>
+</section>
+
+<section anchor="credential-issuers-establishing-trust-in-the-wallet"><name>Credential Issuers Establishing Trust in the Wallet</name>
+<t>During the issuance phase, the Wallet Instance authenticates with the Credential Issuer using a Client authentication mechanism that includes a proof issued by its Wallet Provider.</t>
+<t>This proof is a signed data object that confirms the match of a Wallet Instance to a Wallet Solution, as attested by the Wallet Provider. This proof contains all the information the Credential Issuer requires regarding the security and compliance of the Wallet Instance and the cryptographic proof of possession of this attestation provided by the Wallet Instance presenting it.</t>
+<t>To establish trust with the Wallet Instance, the Credential Issuer MUST first establish trust with the Wallet Provider that is the issuer of the verifiable attestation, as described in the previous section.</t>
+<t>The verifiable attestation issued by the Wallet Provider to the Wallet Instance MUST be cryptographically validated using the cryptographic material provided by the federation Trust Chain. The Credential Issuer evaluates the adequacy of these verifiable attestations using mechanisms and rules that might depend upon different regulations and frameworks that are out of the scope of this specification.</t>
+</section>
+
+<section anchor="wallet-establishing-trust-in-the-credential-verifier"><name>Wallet Establishing Trust in the Credential Verifier</name>
+<t>The Federation Entity Discovery starts with the Wallet Instance fetching the Credential Verifier's Entity Configuration to identify authority hints, pointing to Federation Entities that can issue Subordinate Statements about the Credential Verifier. The Wallet Instance then follows these hints and collects the Subordinate Statements and validating each one. The process continues until the Wallet Instance reaches the Trust Anchor. Finally, the Wallet Instance compiles the validated Trust Chain. If the Trust Chain is valid, the Wallet Instance processes the Credential Verifier final metadata.</t>
+<t>Note: While this section exemplifies the journey of discovery from the perspective of an OpenID Wallet Instance, it is important to understand that this approach can be applied to every kind of entity type within the federation.</t>
+
+<sourcecode type="ascii-art">        +------+                               +-------------------+ +-------------------------+          
+        |Wallet|                               |Credential Verifier| |Intermediate/Trust Anchor|          
+        +---┬--+                               +--------+----------+ +--------+----------------+          
+            |       Fetch Entity Configuration          |                     |                       
+            |------------------------------------------&gt;|                     |                       
+            |                                           |                     |                       
+            |----+                                      |                     |                       
+            |    | Extract Authority Hints              |                     |
+            |    | from Entity Configuration            |                     |                       
+            |&lt;---+                                      |                     |                       
+            |                                           |                     |                       
+            |                                           |                     |                       
++-------+---+-------------------------------------------+---------------------+----------+
+| LOOP  |for each Authority Hint                        |                     |          |
++-------+   |                                           |                     |          |
+|           |                   Fetch Entity Configuration                    |          |
+|           |----------------------------------------------------------------&gt;|          |
+|           |                                           |                     |          |
+|           |                    Fetch Subordinate Statement                  |          |
+|           |----------------------------------------------------------------&gt;|          |
+|           |                                           |                     |          |
+|           |----+                                      |                     |          |
+|           |    | Validate the previous statement      |                     |          |
+|           |&lt;---+ using the Federation Entity Keys     |                     |          |
+|           |      provided in the Subordinate Statement|                     |          |
+|           |                                           |                     |          |
++-----------+-------------------------------------------+---------------------+----------+
+            |                                           |                     |                       
+            |----+                                      |                     |                       
+            |    | Validate Trust Chain                 |                     |                       
+            |&lt;---+                                      |                     |                       
+            |                                           |                     |                       
+            |                                           |                     |                       
++------+----+----------------------------------------+  |                     |                       
+| ALT  |If Trust Chain is Valid and Unexpired        |  |                     |                       
++------+    |                                        |  |                     |                       
+|           |----+                                   |  |                     |                       
+|           |    | Proceed with Federation Process   |  |                     |                       
+|           |&lt;---+                                   |  |                     |                       
++-----------+----------------------------------------+  |                     |                       
+|           |                                        |  |                     |                       
+|           |----+                                   |  |                     |                       
+|           |    | Abort Process with Error          |  |                     |                       
+|           |&lt;---+                                   |  |                     |                       
++-----------+----------------------------------------+  |                     |                       
+            |                                           |                     |                       
+            |----+                                      |                     |                       
+            |    | Applies Policies                     |                     |                       
+            |&lt;---+                                      |                     |                       
+            |                                           |                     |                       
+            |----+                                      |                     |                       
+            |    | Derive final metadata                |                     |                       
+            |&lt;---+                                      |                     |                       
+            |                                           |                     |                       
+            |----+                                      |                     |                       
+            |    | Get Credentials                      |                     |
+            |    | allowed for presentation             |                     |                       
+            |&lt;---+                                      |                     |                       
+        +---+--+                               +--------+--------+ +----------+--------------+          
+        |Wallet|                               |Credential Issuer| |Intermediate/Trust Anchor|          
+        +------+                               +-----------------+ +-------------------------+     
+</sourcecode>
+<t><strong>Figure 6</strong>: Federation Entity Discovery, the Wallet Instance evaluates the trust with a Credential Verifier.</t>
+</section>
+</section>
+
+<section anchor="implementation-considerations-for-offline-flows"><name>Implementation Considerations for Offline Flows</name>
+<t>The static Trust Chain parameter within the JWT headers, as defined in Section 4.3 of <xref target="OpenID.Federation"></xref>, is used as a hint to the Entity involved in a transaction with a common Trust Anchor. This facilitates trust evaluation without the need for real-time Federation Entity Discovery using Federation API endpoints.</t>
+<t>The Entity that issues a signed data object, including the <tt>trust_chain</tt> parameter, might be:</t>
+
+<ul spacing="compact">
+<li>Wallet Providers in signed Wallet Attestations. The Wallet Instance obtains one or more Wallet Attestations from its Wallet Provider, each of them including a Trust Chain related to each Trust Anchor the Wallet Provider trusts;</li>
+<li>Credential Verifiers in signed request objects. The Wallet Instance obtains a presentation request that includes a Trust Chain using a Trust Anchor that the Credential Verifier has in common with the Wallet Provider, according to the information obtained in the <tt>wallet_metadata</tt> parameter provided by the Wallet using the Request URI POST;</li>
+<li>A Credential Issuer in a signed Digital Credential. The Wallet Instance obtains a Digital Credential from its Credential Issuer, which includes the Trust Chain using a Trust Anchor that the Credential Verifier has in common with the Wallet Provider, according to the Wallet Attestation used during the Issuance.</li>
+</ul>
+<t>The Entity that receives the data object including the JWT <tt>trust_chain</tt>, such as the Wallet Instance obtaining a signed request object, verifies the Trust Chain using the Trust Anchor's public keys and applies any metadata policies, without needing to have a working network connection for reaching the Federation API.</t>
+<t>Using short-lived Trust Chains ensures compatibility with required revocation administrative protocols, such as those defined in a legal framework. For example, if a revocation must be propagated in less than 24 hours, the Trust Chain should not be valid for more than that period.</t>
+</section>
+
+<section anchor="acknowledgments"><name>Acknowledgments</name>
+<t>We would like to thank the following individuals for their comments, ideas, and contributions to this implementation profile and to the initial set of implementations.</t>
+
+<ul spacing="compact">
+<li>Leif Johansson</li>
+<li>Stefan Liström</li>
+<li>Francesco Antonio Marino</li>
+<li>Giada Sciarretta</li>
+<li>Niels van Dijk</li>
+</ul>
+</section>
+
+</middle>
+
+<back>
+<references><name>Normative References</name>
+<reference anchor="OpenID.Core" target="http://openid.net/specs/openid-connect-core-1_0.html">
+  <front>
+    <title>OpenID Connect Core 1.0 incorporating errata set 2</title>
+    <author fullname="Nat Sakimura" initials="N." surname="Sakimura">
+      <organization>NRI</organization>
+    </author>
+    <author fullname="John Bradley" initials="J." surname="Bradley">
+      <organization>Ping Identity</organization>
+    </author>
+    <author fullname="Michael B. Jones" initials="M." surname="Jones">
+      <organization>Microsoft</organization>
+    </author>
+    <author fullname="Breno de Medeiros" initials="B." surname="de Medeiros">
+      <organization>Google</organization>
+    </author>
+    <author fullname="Chuck Mortimore" initials="C." surname="Mortimore">
+      <organization>Salesforce</organization>
+    </author>
+    <date year="2023" month="December" day="15"></date>
+  </front>
+</reference>
+<reference anchor="OpenID.Federation" target="https://openid.net/specs/openid-federation-1_0.html">
+  <front>
+    <title>OpenID Federation 1.0</title>
+    <author fullname="R. Hedberg, Ed.">
+      <organization>independent</organization>
+    </author>
+    <author fullname="Michael B. Jones">
+      <organization>Self-Issued Consulting</organization>
+    </author>
+    <author fullname="A. Solberg">
+      <organization>Sikt</organization>
+    </author>
+    <author fullname="John Bradley">
+      <organization>Yubico</organization>
+    </author>
+    <author fullname="Giuseppe De Marco">
+      <organization>independent</organization>
+    </author>
+    <author fullname="Vladimir Dzhuvinov">
+      <organization>Connect2id</organization>
+    </author>
+    <date year="2024" month="May" day="31"></date>
+  </front>
+</reference>
+<reference anchor="OpenID4VCI" target="https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html">
+  <front>
+    <title>OpenID for Verifiable Credential Issuance</title>
+    <author fullname="Torsten Lodderstedt" initials="T." surname="Lodderstedt">
+      <organization>SPRIND</organization>
+    </author>
+    <author fullname="Kristina Yasuda" initials="K." surname="Yasuda">
+      <organization>SPRIND</organization>
+    </author>
+    <author fullname="Tobias Looker" initials="T." surname="Looker">
+      <organization>Mattr</organization>
+    </author>
+    <date year="2024" month="August" day="9"></date>
+  </front>
+</reference>
+<reference anchor="OpenID4VP" target="https://openid.net/specs/openid-4-verifiable-presentations-1_0.html">
+  <front>
+    <title>OpenID for Verifiable Presentations</title>
+    <author fullname="Oliver Terbu" initials="O." surname="Terbu">
+      <organization>Mattr</organization>
+    </author>
+    <author fullname="Torsten Lodderstedt" initials="T." surname="Lodderstedt">
+      <organization>SPRIND</organization>
+    </author>
+    <author fullname="Kristina Yasuda" initials="K." surname="Yasuda">
+      <organization>SPRIND</organization>
+    </author>
+    <author fullname="Tobias Looker" initials="T." surname="Looker">
+      <organization>Mattr</organization>
+    </author>
+    <date year="2024" month="August" day="9"></date>
+  </front>
+</reference>
+<xi:include href="https://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.2119.xml"/>
+<xi:include href="https://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.6749.xml"/>
+<xi:include href="https://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.7519.xml"/>
+<xi:include href="https://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.8174.xml"/>
+<xi:include href="https://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.8392.xml"/>
+<xi:include href="https://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.8414.xml"/>
+</references>
+
+<section anchor="notices"><name>Notices</name>
+<t>Copyright (c) 2024 The OpenID Foundation.</t>
+<t>The OpenID Foundation (OIDF) grants to any Contributor, developer, implementer, or other interested party a non-exclusive, royalty free, worldwide copyright license to reproduce, prepare derivative works from, distribute, perform and display, this Implementers Draft or Final Specification solely for the purposes of (i) developing specifications, and (ii) implementing Implementers Drafts and Final Specifications based on such documents, provided that attribution be made to the OIDF as the source of the material, but that such attribution does not indicate an endorsement by the OIDF.</t>
+<t>The technology described in this specification was made available from contributions from various sources, including members of the OpenID Foundation and others. Although the OpenID Foundation has taken steps to help ensure that the technology is available for distribution, it takes no position regarding the validity or scope of any intellectual property or other rights that might be claimed to pertain to the implementation or use of the technology described in this specification or the extent to which any license under such rights might or might not be available; neither does it represent that it has made any independent effort to identify any such rights. The OpenID Foundation and the contributors to this specification make no (and hereby expressly disclaim any) warranties (express, implied, or otherwise), including implied warranties of merchantability, non-infringement, fitness for a particular purpose, or title, related to this specification, and the entire risk as to implementing this specification is assumed by the implementer. The OpenID Intellectual Property Rights policy requires contributors to offer a patent promise not to assert certain patent claims against other contributors and against implementers. The OpenID Foundation invites any interested party to bring to its attention any copyrights, patents, patent applications, or other proprietary rights that MAY cover technology that MAY be required to practice this specification.</t>
+</section>
+
+<section anchor="document-history"><name>Document History</name>
+<t>[[ To be removed from the final specification ]]</t>
+<t>-04</t>
+
+<ul spacing="compact">
+<li>Updated draft number following working group adoption of -03.</li>
+</ul>
+<t>-03</t>
+
+<ul spacing="compact">
+<li>Added section about Credential Issuers establishing trust with Wallet Solution</li>
+<li>Added sequence diagrams using ascii-arts</li>
+<li>Renamed Third-Party Trust Model to Trusted Third-Party Model</li>
+<li>Added legends to the figures</li>
+<li>Added section about Wallet Checking the Non-Revocation of its Wallet Provider</li>
+<li>Added implementation Considerations for Offline Flows</li>
+<li>Improved clarification about using metadata in Subordiante Statements</li>
+</ul>
+<t>-02</t>
+
+<ul spacing="compact">
+<li>Added non-normative example about using policies with metadata and trust marks</li>
+<li>Added Credential Verifier and Credential Verifier Instance</li>
+<li>Added section about Credential Verifier Instance</li>
+<li>Illustrative rationale about Authentic Sources and Wallet Provider within the Four-Party Model sections</li>
+<li>Moved text on Possible Use of Metadata Parameters by Wallet Ecosystems to issue #22.</li>
+<li>Added warning about the specification not being final.</li>
+</ul>
+<t>-01</t>
+
+<ul spacing="compact">
+<li>Created Scope section describing the purpose of the document and collaboration with other working groups.</li>
+<li>Moved metadata tables and examples to an informative appendix on possible usage.</li>
+<li>Fixed #10: Renamed <tt>openid_wallet_relying_party</tt> to <tt>openid_credential_verifier</tt>.</li>
+</ul>
+<t>-00</t>
+
+<ul spacing="compact">
+<li>Initial version</li>
+</ul>
+</section>
+
+</back>
+
+</rfc>
