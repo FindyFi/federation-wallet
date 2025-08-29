@@ -608,6 +608,94 @@ Note: While this section exemplifies the journey of discovery from the perspecti
 ~~~
 **Figure 6**: Federation Entity Discovery, the Wallet Instance evaluates the trust with a Credential Verifier.
 
+## Credential Verifiers Establishing Trust in Credential Issuers
+
+During the credential verification phase, Credential Verifiers SHOULD establish trust with Credential Issuers to validate the authenticity and integrity of presented digital credentials. This trust establishment process is critical to ensure that the Credential Verifier can rely on the credentials issued by a particular Credential Issuer and verify their validity against the issuer's cryptographic material.
+
+The trust establishment between Credential Verifiers and Credential Issuers follows the standard OpenID Federation entity discovery mechanisms. The Credential Verifier initiates this process by fetching the Credential Issuer's Entity Configuration to obtain authority hints and construct a valid Trust Chain up to a recognized Trust Anchor.
+
+The Credential Verifier can discover the Credential Issuer's Entity Configuration using different methods depending on how the issuer is identified:
+
+- **EntityConfiguration Property**: If the credential issuer is an object and it has the property `EntityConfiguration`, the verifier should look for the issuer's Entity Configuration from the address specified as the value of the `EntityConfiguration` property.
+
+- **HTTPS URI or did:web DID Method**: If the credential issuer is identified by a https:// URI or a did:web DID method, the verifier should look for the issuer's Entity Configuration from the `.well-known` location in that address.
+
+- **Other DID Methods**: If the credential issuer is identified by another DID method, the verifier should resolve and parse the issuer's DID document and look for a service with `type` of `EntityConfiguration` in the `service` property in the DID document. The verifier should then use the value of the `serviceEndpoint` property in the found service to fetch the issuer's Entity Configuration.
+
+The Credential Verifier SHOULD validate the Trust Chain for the Credential Issuer using the same federation discovery process outlined in other sections. This includes:
+
+1. **Entity Configuration Retrieval**: The Credential Verifier fetches the Credential Issuer's Entity Configuration from the issuer's federation endpoint.
+
+2. **Authority Hints Processing**: The Credential Verifier follows the authority hints to collect Subordinate Statements from Intermediate entities and the Trust Anchor.
+
+3. **Trust Chain Validation**: Each Subordinate Statement in the chain MUST be cryptographically validated using the issuing entity's public keys.
+
+4. **Metadata Processing**: Upon successful Trust Chain validation, the Credential Verifier processes the final metadata for the Credential Issuer, applying any relevant policies.
+
+5. **Credential Validation**: The Credential Verifier uses the validated cryptographic material and metadata from the Trust Chain to verify the authenticity and integrity of credentials presented by Holders.
+
+~~~ ascii-art
+        +-------------------+                      +-----------------+ +-------------------------+          
+        |Credential Verifier|                      |Credential Issuer| |Intermediate/Trust Anchor|          
+        +--------+----------+                      +--------+--------+ +--------+----------------+          
+                 |       Fetch Entity Configuration         |                     |                       
+                 |----------------------------------------->|                     |                       
+                 |                                          |                     |                       
+                 |----+                                     |                     |                       
+                 |    | Extract Authority Hints             |                     |
+                 |    | from Entity Configuration           |                     |                       
+                 |<---+                                     |                     |                       
+                 |                                          |                     |                       
+                 |                                          |                     |                       
++--------+-------+------------------------------------------+---------------------+----------+
+| LOOP   |for each Authority Hint                           |                     |          |
++--------+       |                                          |                     |          |
+|                |                   Fetch Entity Configuration                   |          |
+|                |---------------------------------------------------------------->|          |
+|                |                                          |                     |          |
+|                |                    Fetch Subordinate Statement                 |          |
+|                |---------------------------------------------------------------->|          |
+|                |                                          |                     |          |
+|                |----+                                     |                     |          |
+|                |    | Validate the previous statement     |                     |          |
+|                |<---+ using the Federation Entity Keys    |                     |          |
+|                |      provided in the Subordinate Statement|                    |          |
+|                |                                          |                     |          |
++----------------+------------------------------------------+---------------------+----------+
+                 |                                          |                     |                       
+                 |----+                                     |                     |                       
+                 |    | Validate Trust Chain                |                     |                       
+                 |<---+                                     |                     |                       
+                 |                                          |                     |                       
+                 |                                          |                     |                       
++-------+--------+-----------------------------------------+ |                     |                       
+| ALT   |If Trust Chain is Valid and Unexpired             | |                     |                       
++-------+        |                                         | |                     |                       
+|                |----+                                    | |                     |                       
+|                |    | Extract Issuer Cryptographic       | |                     |                       
+|                |    | Material and Metadata              | |                     |                       
+|                |<---+                                    | |                     |                       
+|                |                                         | |                     |                       
+|                |----+                                    | |                     |                       
+|                |    | Proceed with Credential            | |                     |                       
+|                |    | Validation Process                 | |                     |                       
+|                |<---+                                    | |                     |                       
++----------------+-----------------------------------------+ |                     |                       
+|                |                                         | |                     |                       
+|                |----+                                    | |                     |                       
+|                |    | Reject Credential Verification    | |                     |                       
+|                |    | with Trust Error                  | |                     |                       
+|                |<---+                                    | |                     |                       
++----------------+-----------------------------------------+ |                     |                       
+                 |                                          |                     |                       
+        +--------+----------+                      +--------+--------+ +--------+----------------+          
+        |Credential Verifier|                      |Credential Issuer| |Intermediate/Trust Anchor|          
+        +-------------------+                      +-----------------+ +-------------------------+     
+~~~
+**Figure 7**: Federation Entity Discovery, the Credential Verifier evaluates the trust with a Credential Issuer.
+
+This trust establishment process ensures that Credential Verifiers can confidently validate digital credentials by verifying both the issuer's legitimacy within the federation and the cryptographic integrity of the credentials themselves. The process provides the necessary foundation for secure and trusted credential verification workflows within federated wallet ecosystems.
+
 # Implementation Considerations for Offline Flows
 
 The static Trust Chain parameter within the JWT headers, as defined in Section 4.3 of [@!OpenID.Federation], is used as a hint to the Entity involved in a transaction with a common Trust Anchor. This facilitates trust evaluation without the need for real-time Federation Entity Discovery using Federation API endpoints.
