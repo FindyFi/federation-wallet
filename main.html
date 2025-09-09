@@ -1209,7 +1209,7 @@ li > p:last-of-type:only-child {
 <thead><tr>
 <td class="left"></td>
 <td class="center">openid-federation-wallet</td>
-<td class="right">August 2025</td>
+<td class="right">September 2025</td>
 </tr></thead>
 <tfoot><tr>
 <td class="left">De Marco, et al.</td>
@@ -1224,7 +1224,7 @@ li > p:last-of-type:only-child {
 <dd class="workgroup">OpenID Connect A/B</dd>
 <dt class="label-published">Published:</dt>
 <dd class="published">
-<time datetime="2025-08-29" class="published">29 August 2025</time>
+<time datetime="2025-09-09" class="published">9 September 2025</time>
     </dd>
 <dt class="label-authors">Authors:</dt>
 <dd class="authors">
@@ -2077,37 +2077,26 @@ These modifications allow a federation authority, such as a Trust Anchor, to app
         </h3>
 <p id="section-8.7-1">During the credential verification phase, Credential Verifiers SHOULD establish trust with Credential Issuers to validate the authenticity and integrity of presented digital credentials. This trust establishment process is critical to ensure that the Credential Verifier can rely on the credentials issued by a particular Credential Issuer and verify their validity against the issuer's cryptographic material.<a href="#section-8.7-1" class="pilcrow">¶</a></p>
 <p id="section-8.7-2">The trust establishment between Credential Verifiers and Credential Issuers follows the standard OpenID Federation entity discovery mechanisms. The Credential Verifier initiates this process by fetching the Credential Issuer's Entity Configuration to obtain authority hints and construct a valid Trust Chain up to a recognized Trust Anchor.<a href="#section-8.7-2" class="pilcrow">¶</a></p>
-<p id="section-8.7-3">The Credential Verifier can discover the Credential Issuer's Entity Configuration using different methods depending on how the issuer is identified:<a href="#section-8.7-3" class="pilcrow">¶</a></p>
-<ul class="normal">
-<li class="normal" id="section-8.7-4.1">
-            <p id="section-8.7-4.1.1"><strong>EntityConfiguration Property</strong>: If the credential issuer is an object and it has the property <code>EntityConfiguration</code>, the verifier should look for the issuer's Entity Configuration from the address specified as the value of the <code>EntityConfiguration</code> property.<a href="#section-8.7-4.1.1" class="pilcrow">¶</a></p>
+<p id="section-8.7-3">The <span>[<a href="#OpenID.Federation" class="cite xref">OpenID.Federation</a>]</span> specification requires that Entity Identifiers MUST be URLs using the https scheme. In various flavors of digital credentials, the Credential Issuer can be identified in various ways. If the Credential Issuer is identified using a https URL in the digital credential, the Credential Verifier SHOULD use that URL as the Entity Identifier of the Credential Issuer. If the Credential Issuer is identified using other methods that have 1-to-1 mapping to a https URL (e.g., <code>did:web</code>, <code>did:webvh</code>), the Credential Verifier MAY use that URL as the Entity Identifier of the Credential Issuer. Future versions of this specification may provide other mechanisms to specity the Credential Issuer's Entity Identifier in a digital credential.<a href="#section-8.7-3" class="pilcrow">¶</a></p>
+<p id="section-8.7-4">The Credential Verifier SHOULD validate the Trust Chain for the Credential Issuer using the same federation discovery process outlined in other sections. This includes:<a href="#section-8.7-4" class="pilcrow">¶</a></p>
+<ol start="1" type="1" class="normal type-1" id="section-8.7-5">
+<li id="section-8.7-5.1">
+            <p id="section-8.7-5.1.1"><strong>Entity Configuration Retrieval</strong>: The Credential Verifier fetches the Credential Issuer's Entity Configuration from the issuer's configuration endpoint.<a href="#section-8.7-5.1.1" class="pilcrow">¶</a></p>
 </li>
-          <li class="normal" id="section-8.7-4.2">
-            <p id="section-8.7-4.2.1"><strong>HTTPS URI or did:web DID Method</strong>: If the credential issuer is identified by a https:// URI or a did:web DID method, the verifier should look for the issuer's Entity Configuration from the <code>.well-known</code> location in that address.<a href="#section-8.7-4.2.1" class="pilcrow">¶</a></p>
+          <li id="section-8.7-5.2">
+            <p id="section-8.7-5.2.1"><strong>Authority Hints Processing</strong>: The Credential Verifier follows the authority hints to collect Subordinate Statements from Intermediate entities and the Trust Anchor.<a href="#section-8.7-5.2.1" class="pilcrow">¶</a></p>
 </li>
-          <li class="normal" id="section-8.7-4.3">
-            <p id="section-8.7-4.3.1"><strong>Other DID Methods</strong>: If the credential issuer is identified by another DID method, the verifier should resolve and parse the issuer's DID document and look for a service with <code>type</code> of <code>EntityConfiguration</code> in the <code>service</code> property in the DID document. The verifier should then use the value of the <code>serviceEndpoint</code> property in the found service to fetch the issuer's Entity Configuration.<a href="#section-8.7-4.3.1" class="pilcrow">¶</a></p>
+          <li id="section-8.7-5.3">
+            <p id="section-8.7-5.3.1"><strong>Trust Chain Validation</strong>: Each Subordinate Statement in the chain MUST be cryptographically validated using the issuing entity's public keys.<a href="#section-8.7-5.3.1" class="pilcrow">¶</a></p>
 </li>
-        </ul>
-<p id="section-8.7-5">The Credential Verifier SHOULD validate the Trust Chain for the Credential Issuer using the same federation discovery process outlined in other sections. This includes:<a href="#section-8.7-5" class="pilcrow">¶</a></p>
-<ol start="1" type="1" class="normal type-1" id="section-8.7-6">
-<li id="section-8.7-6.1">
-            <p id="section-8.7-6.1.1"><strong>Entity Configuration Retrieval</strong>: The Credential Verifier fetches the Credential Issuer's Entity Configuration from the issuer's federation endpoint.<a href="#section-8.7-6.1.1" class="pilcrow">¶</a></p>
+          <li id="section-8.7-5.4">
+            <p id="section-8.7-5.4.1"><strong>Metadata Processing</strong>: Upon successful Trust Chain validation, the Credential Verifier processes the final metadata for the Credential Issuer, applying any relevant policies.<a href="#section-8.7-5.4.1" class="pilcrow">¶</a></p>
 </li>
-          <li id="section-8.7-6.2">
-            <p id="section-8.7-6.2.1"><strong>Authority Hints Processing</strong>: The Credential Verifier follows the authority hints to collect Subordinate Statements from Intermediate entities and the Trust Anchor.<a href="#section-8.7-6.2.1" class="pilcrow">¶</a></p>
-</li>
-          <li id="section-8.7-6.3">
-            <p id="section-8.7-6.3.1"><strong>Trust Chain Validation</strong>: Each Subordinate Statement in the chain MUST be cryptographically validated using the issuing entity's public keys.<a href="#section-8.7-6.3.1" class="pilcrow">¶</a></p>
-</li>
-          <li id="section-8.7-6.4">
-            <p id="section-8.7-6.4.1"><strong>Metadata Processing</strong>: Upon successful Trust Chain validation, the Credential Verifier processes the final metadata for the Credential Issuer, applying any relevant policies.<a href="#section-8.7-6.4.1" class="pilcrow">¶</a></p>
-</li>
-          <li id="section-8.7-6.5">
-            <p id="section-8.7-6.5.1"><strong>Credential Validation</strong>: The Credential Verifier uses the validated cryptographic material and metadata from the Trust Chain to verify the authenticity and integrity of credentials presented by Holders.<a href="#section-8.7-6.5.1" class="pilcrow">¶</a></p>
+          <li id="section-8.7-5.5">
+            <p id="section-8.7-5.5.1"><strong>Credential Validation</strong>: The Credential Verifier uses the validated cryptographic material and metadata from the Trust Chain to verify the authenticity and integrity of credentials presented by Holders.<a href="#section-8.7-5.5.1" class="pilcrow">¶</a></p>
 </li>
         </ol>
-<div class="breakable lang-ascii-art sourcecode" id="section-8.7-7">
+<div class="breakable lang-ascii-art sourcecode" id="section-8.7-6">
 <pre>        +-------------------+                      +-----------------+ +-------------------------+
         |Credential Verifier|                      |Credential Issuer| |Intermediate/Trust Anchor|
         +--------+----------+                      +--------+--------+ +--------+----------------+
@@ -2164,10 +2153,10 @@ These modifications allow a federation authority, such as a Trust Anchor, to app
         +--------+----------+                      +--------+--------+ +--------+----------------+
         |Credential Verifier|                      |Credential Issuer| |Intermediate/Trust Anchor|
         +-------------------+                      +-----------------+ +-------------------------+
-</pre><a href="#section-8.7-7" class="pilcrow">¶</a>
+</pre><a href="#section-8.7-6" class="pilcrow">¶</a>
 </div>
-<p id="section-8.7-8"><strong>Figure 7</strong>: Federation Entity Discovery, the Credential Verifier evaluates the trust with a Credential Issuer.<a href="#section-8.7-8" class="pilcrow">¶</a></p>
-<p id="section-8.7-9">This trust establishment process ensures that Credential Verifiers can confidently validate digital credentials by verifying both the issuer's legitimacy within the federation and the cryptographic integrity of the credentials themselves. The process provides the necessary foundation for secure and trusted credential verification workflows within federated wallet ecosystems.<a href="#section-8.7-9" class="pilcrow">¶</a></p>
+<p id="section-8.7-7"><strong>Figure 7</strong>: Federation Entity Discovery, the Credential Verifier evaluates the trust with a Credential Issuer.<a href="#section-8.7-7" class="pilcrow">¶</a></p>
+<p id="section-8.7-8">This trust establishment process ensures that Credential Verifiers can confidently validate digital credentials by verifying both the issuer's legitimacy within the federation and the cryptographic integrity of the credentials themselves. The process provides the necessary foundation for secure and trusted credential verification workflows within federated wallet ecosystems.<a href="#section-8.7-8" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>
